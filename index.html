@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Gasto Calórico - Yazio Companion</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="activities.js"></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <div class="logo-text">
+                <h1>Yazio Calorie Calculator</h1>
+                <p>Calculadora de atividades personalizadas para registro no Yazio</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Atividades</span>
+            </div>
+            <div class="activity-list" id="activityList">
+                <!-- Dynamic Activity Buttons inserted here -->
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <!-- Selected Activity Controls -->
+            <section class="active-card">
+                <div class="controls-area">
+                    <div class="act-header-detail">
+                        <div class="act-big-icon" id="actIcon">
+                            <i class="fa-solid fa-person-dots-from-line"></i>
+                        </div>
+                        <div class="act-detail-text">
+                            <h2 id="actTitle">Nome da Atividade</h2>
+                            <p id="actDesc">Descrição e nível de esforço metabólico.</p>
+                        </div>
+                    </div>
+
+                    <div class="controls-grid">
+                        <!-- Weight Control -->
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Peso Corporal</span>
+                                <span class="val"><span id="weightVal">70</span> kg</span>
+                            </div>
+                            <div class="slider-input-wrap">
+                                <input type="range" id="weightSlider" min="40" max="140" value="70">
+                                <input type="number" id="weightNum" min="40" max="140" value="70">
+                            </div>
+                        </div>
+
+                        <!-- Height Control -->
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Altura</span>
+                                <span class="val"><span id="heightVal">165</span> cm</span>
+                            </div>
+                            <div class="slider-input-wrap">
+                                <input type="range" id="heightSlider" min="130" max="210" value="165">
+                                <input type="number" id="heightNum" min="130" max="210" value="165">
+                            </div>
+                        </div>
+
+                        <!-- Time Duration Control -->
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Duração</span>
+                                <span class="val"><span id="timeVal">60</span> min (<span id="timeHoursVal">1.0</span> h)</span>
+                            </div>
+                            <div class="slider-input-wrap">
+                                <input type="range" id="timeSlider" min="5" max="240" step="5" value="60">
+                                <input type="number" id="timeNum" min="5" max="240" step="5" value="60">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result Card -->
+                <div class="result-card">
+                    <div class="result-title">Gasto Calórico Estimado</div>
+                    <div class="result-value" id="calcResult">0</div>
+                    <div class="result-unit">kcal gastas</div>
+                    <button class="copy-btn" onclick="copyToClipboard()">
+                        <i class="fa-regular fa-copy"></i>
+                        Copiar para o Yazio
+                    </button>
+                    <div class="copy-toast" id="copyToast">Valor copiado!</div>
+                </div>
+            </section>
+
+            <section class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i class="fa-solid fa-chart-line" style="color: #6366F1;"></i>
+                        Calorias x Tempo de Prática
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i class="fa-solid fa-chart-column" style="color: #10B981;"></i>
+                        Calorias x Peso Corporal
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="weightChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="table-card">
+                <div class="table-title">
+                    <i class="fa-solid fa-table" style="color: #A855F7;"></i>
+                    Tabela de Consulta Rápida (Sua Seleção)
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Peso / Duração</th>
+                            <th>15 min</th>
+                            <th>30 min</th>
+                            <th>45 min</th>
+                            <th>60 min (1h)</th>
+                            <th>90 min (1h30)</th>
+                            <th>120 min (2h)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="referenceTableBody">
+                        <!-- Dynamic table content -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Add New Custom Activity -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Adicionar Atividade Personalizada</h3>
+                <button class="close-modal" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <form id="addActivityForm" onsubmit="handleAddActivity(event)">
+                <div class="form-group">
+                    <label for="newTitle">Nome da Atividade</label>
+                    <input type="text" id="newTitle" placeholder="Ex: Lavar Carro, Pintar Parede..." required>
+                </div>
+                <div class="form-group">
+                    <label for="newMET">Fator MET (Equivalente Metabólico)</label>
+                    <input type="number" id="newMET" step="0.1" min="1.0" max="15.0" placeholder="Ex: 3.0" required>
+                </div>
+                <div class="form-group">
+                    <label for="newIcon">Ícone (FontAwesome)</label>
+                    <select id="newIcon">
+                        <option value="fa-screwdriver-wrench">Ferramentas / Manutenção</option>
+                        <option value="fa-broom">Limpeza / Casa</option>
+                        <option value="fa-seedling">Jardim / Plantas</option>
+                        <option value="fa-hands-holding-child">Manual / Leve</option>
+                        <option value="fa-dumbbell">Exercício / Esporte</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newDesc">Descrição Curta</label>
+                    <input type="text" id="newDesc" placeholder="Breve explicação da intensidade">
+                </div>
+                <button type="submit" class="submit-btn">Adicionar Atividade</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
