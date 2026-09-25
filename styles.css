@@ -100,6 +100,14 @@ header {
     border-color: var(--primary);
 }
 
+.app-container > *,
+.main-content,
+.active-card,
+.chart-card,
+.table-card {
+    min-width: 0;
+}
+
 .app-container {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -421,7 +429,7 @@ input[type="number"] {
 
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
 }
 
@@ -454,6 +462,10 @@ input[type="number"] {
     position: relative;
     height: 250px;
     width: 100%;
+}
+
+.chart-container canvas, table {
+    max-width: 100%;
 }
 
 .table-card {
@@ -598,4 +610,24 @@ tr:hover td {
     overflow-x: auto;
     white-space: pre-wrap;
     border: 1px solid var(--card-border);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 0.75rem;
+        gap: 1rem;
+    }
+
+    .active-card {
+        padding: 1rem;
+    }
+
+    .act-header-detail {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .slider-input-wrap {
+        width: 100%;
+    }
 }

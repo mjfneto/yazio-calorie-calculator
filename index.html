@@ -152,40 +152,5 @@
             </section>
         </main>
     </div>
-
-    <!-- Modal: Add New Custom Activity -->
-    <div class="modal-overlay" id="addModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Adicionar Atividade Personalizada</h3>
-                <button class="close-modal" onclick="closeModal('addModal')">&times;</button>
-            </div>
-            <form id="addActivityForm" onsubmit="handleAddActivity(event)">
-                <div class="form-group">
-                    <label for="newTitle">Nome da Atividade</label>
-                    <input type="text" id="newTitle" placeholder="Ex: Lavar Carro, Pintar Parede..." required>
-                </div>
-                <div class="form-group">
-                    <label for="newMET">Fator MET (Equivalente Metabólico)</label>
-                    <input type="number" id="newMET" step="0.1" min="1.0" max="15.0" placeholder="Ex: 3.0" required>
-                </div>
-                <div class="form-group">
-                    <label for="newIcon">Ícone (FontAwesome)</label>
-                    <select id="newIcon">
-                        <option value="fa-screwdriver-wrench">Ferramentas / Manutenção</option>
-                        <option value="fa-broom">Limpeza / Casa</option>
-                        <option value="fa-seedling">Jardim / Plantas</option>
-                        <option value="fa-hands-holding-child">Manual / Leve</option>
-                        <option value="fa-dumbbell">Exercício / Esporte</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="newDesc">Descrição Curta</label>
-                    <input type="text" id="newDesc" placeholder="Breve explicação da intensidade">
-                </div>
-                <button type="submit" class="submit-btn">Adicionar Atividade</button>
-            </form>
-        </div>
-    </div>
 </body>
 </html>
