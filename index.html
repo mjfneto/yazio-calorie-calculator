@@ -29,6 +29,10 @@
             <div class="sidebar-header">
                 <span class="sidebar-title">Atividades</span>
                 <div class="data-actions">
+                    <button class="data-action-btn add-activity-btn" id="addActivityBtn" type="button">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Adicionar nova</span>
+                    </button>
                     <button class="data-action-btn" id="importBtn" type="button" title="Importar atividades de um arquivo JSON">
                         <i class="fa-solid fa-file-import"></i>
                         <span>Importar</span>
@@ -136,6 +140,62 @@
                 </table>
             </section>
         </main>
+    </div>
+
+    <div class="modal-overlay" id="activityModal" role="dialog" aria-modal="true" aria-labelledby="activityModalTitle" hidden>
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <h2 id="activityModalTitle">Adicionar nova atividade</h2>
+                    <p>Informe os dados usados no cálculo e na lista de atividades.</p>
+                </div>
+                <button class="modal-close-btn" id="closeModalBtn" type="button" aria-label="Fechar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="activityForm" novalidate>
+                <div class="form-group">
+                    <label for="activityTitle">Nome da atividade <span aria-hidden="true">*</span></label>
+                    <input id="activityTitle" name="title" type="text" maxlength="80" autocomplete="off" required placeholder="Ex.: Jardinagem leve">
+                </div>
+
+                <div class="form-group">
+                    <label for="activityMet">MET <span aria-hidden="true">*</span></label>
+                    <input id="activityMet" name="met" type="number" min="0.1" max="30" step="0.1" inputmode="decimal" required placeholder="Ex.: 2.5">
+                    <small>Informe o valor MET correspondente à intensidade da atividade.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="activityDescription">Descrição</label>
+                    <textarea id="activityDescription" name="desc" rows="3" maxlength="240" placeholder="Ex.: Trabalho leve em pé, com pequenas caminhadas."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="activityIcon">Ícone</label>
+                    <select id="activityIcon" name="icon">
+                        <option value="fa-person-walking">Caminhada / atividade geral</option>
+                        <option value="fa-hands">Trabalho manual</option>
+                        <option value="fa-broom">Limpeza</option>
+                        <option value="fa-seedling">Jardinagem</option>
+                        <option value="fa-dumbbell">Exercício / força</option>
+                        <option value="fa-person-running">Corrida / esforço intenso</option>
+                        <option value="fa-bicycle">Bicicleta</option>
+                        <option value="fa-house">Atividade doméstica</option>
+                    </select>
+                </div>
+
+                <p class="form-error" id="activityFormError" role="alert" aria-live="polite"></p>
+
+                <div class="modal-actions">
+                    <button class="secondary-btn" id="cancelModalBtn" type="button">Cancelar</button>
+                    <button class="submit-btn" type="submit">
+                        <i class="fa-solid fa-plus"></i>
+                        Adicionar atividade
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </body>
 </html>

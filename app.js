@@ -26,6 +26,7 @@ const calcResultEl = document.getElementById('calcResult');
 const referenceTableBody = document.getElementById('referenceTableBody');
 const copyBtn = document.getElementById('copyBtn');
 const copyToast = document.getElementById('copyToast');
+const addActivityBtn = document.getElementById('addActivityBtn');
 const importBtn = document.getElementById('importBtn');
 const exportBtn = document.getElementById('exportBtn');
 const importFile = document.getElementById('importFile');
@@ -38,6 +39,16 @@ const timeSlider = document.getElementById('timeSlider');
 const timeNum = document.getElementById('timeNum');
 const timeVal = document.getElementById('timeVal');
 const timeHoursVal = document.getElementById('timeHoursVal');
+
+const activityModal = document.getElementById('activityModal');
+const activityForm = document.getElementById('activityForm');
+const activityTitle = document.getElementById('activityTitle');
+const activityMet = document.getElementById('activityMet');
+const activityDescription = document.getElementById('activityDescription');
+const activityIcon = document.getElementById('activityIcon');
+const activityFormError = document.getElementById('activityFormError');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const cancelModalBtn = document.getElementById('cancelModalBtn');
 
 window.addEventListener('DOMContentLoaded', init);
 
@@ -53,18 +64,28 @@ async function init() {
         updateActivityPanel();
         createCharts();
         updateCalculations();
-        setDataStatus(loaded.source === 'local' ? 'Lista personalizada salva neste navegador.' : 'Lista padrão carregada de activities.json.');
+        setDataStatus(
+            loaded.source === 'local'
+                ? 'Lista personalizada salva neste navegador.'
+                : 'Lista padrão carregada de activities.json.'
+        );
     } catch (error) {
         console.error(error);
-        setDataStatus('Não foi possível carregar a lista padrão. Importe um arquivo JSON para continuar.', true);
+        setDataStatus('Não foi possível carregar a lista padrão. Importe um JSON ou adicione uma atividade para continuar.', true);
         setApplicationDisabled(true);
     }
 }
 
 function setupEventListeners() {
     activityListEl.addEventListener('click', event => {
-        const button = event.target.closest('.activity-btn');
-        if (button) selectActivity(button.dataset.activityId);
+        const deleteButton = event.target.closest('.delete-activity-btn');
+        if (deleteButton) {
+            deleteActivity(deleteButton.dataset.activityId);
+            return;
+        }
+
+        const activityButton = event.target.closest('.activity-btn');
+        if (activityButton) selectActivity(activityButton.dataset.activityId);
     });
 
     [weightSlider, weightNum].forEach(input => {
@@ -76,6 +97,17 @@ function setupEventListeners() {
     });
 
     copyBtn.addEventListener('click', copyToClipboard);
+    addActivityBtn.addEventListener('click', openActivityModal);
+    closeModalBtn.addEventListener('click', closeActivityModal);
+    cancelModalBtn.addEventListener('click', closeActivityModal);
+    activityForm.addEventListener('submit', addActivity);
+    activityModal.addEventListener('click', event => {
+        if (event.target === activityModal) closeActivityModal();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !activityModal.hidden) closeActivityModal();
+    });
+
     importBtn.addEventListener('click', () => importFile.click());
     importFile.addEventListener('change', importActivities);
     exportBtn.addEventListener('click', exportActivities);
@@ -166,6 +198,9 @@ function renderActivityList() {
     const fragment = document.createDocumentFragment();
 
     activities.forEach(activity => {
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'activity-btn';
@@ -185,13 +220,102 @@ function renderActivityList() {
         met.className = 'act-met';
         met.textContent = `${activity.met} METs`;
 
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'delete-activity-btn';
+        deleteButton.dataset.activityId = activity.id;
+        deleteButton.title = `Excluir ${activity.title}`;
+        deleteButton.setAttribute('aria-label', `Excluir ${activity.title}`);
+        deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+
         info.append(title, met);
         button.append(icon, info);
-        fragment.appendChild(button);
+        item.append(button, deleteButton);
+        fragment.appendChild(item);
     });
 
     activityListEl.replaceChildren(fragment);
     updateActiveActivityButton();
+}
+
+function openActivityModal() {
+    activityForm.reset();
+    activityIcon.value = DEFAULT_ICON;
+    activityFormError.textContent = '';
+    activityModal.hidden = false;
+    document.body.classList.add('modal-open');
+    activityTitle.focus();
+}
+
+function closeActivityModal() {
+    activityModal.hidden = true;
+    document.body.classList.remove('modal-open');
+    activityFormError.textContent = '';
+    addActivityBtn.focus();
+}
+
+function addActivity(event) {
+    event.preventDefault();
+    activityFormError.textContent = '';
+
+    try {
+        if (!activityForm.reportValidity()) return;
+
+        const usedIds = new Set(activities.map(activity => activity.id));
+        const newActivity = normalizeActivity({
+            title: activityTitle.value,
+            met: activityMet.value,
+            desc: activityDescription.value,
+            icon: activityIcon.value
+        }, activities.length, usedIds);
+
+        activities.push(newActivity);
+        currentActivity = newActivity;
+
+        setApplicationDisabled(false);
+        renderActivityList();
+        updateActivityPanel();
+        if (!timeChart || !weightChart) createCharts();
+        updateCalculations();
+        closeActivityModal();
+        persistActivityChanges(`Atividade “${newActivity.title}” adicionada.`);
+    } catch (error) {
+        activityFormError.textContent = error.message;
+    }
+}
+
+function deleteActivity(id) {
+    const index = activities.findIndex(activity => activity.id === id);
+    if (index === -1) return;
+
+    if (activities.length === 1) {
+        setDataStatus('A última atividade não pode ser excluída. Adicione ou importe outra atividade primeiro.', true);
+        return;
+    }
+
+    const activity = activities[index];
+    if (!window.confirm(`Excluir “${activity.title}” da lista?`)) return;
+
+    activities.splice(index, 1);
+
+    if (currentActivity?.id === id) {
+        currentActivity = activities[Math.min(index, activities.length - 1)];
+    }
+
+    renderActivityList();
+    updateActivityPanel();
+    updateCalculations();
+    persistActivityChanges(`Atividade “${activity.title}” excluída.`);
+}
+
+function persistActivityChanges(message) {
+    const storedLocally = saveLocalActivities(activities);
+    setDataStatus(
+        storedLocally
+            ? `${message} Lista salva neste navegador.`
+            : `${message} A alteração está apenas nesta sessão; exporte o JSON para não perdê-la.`,
+        !storedLocally
+    );
 }
 
 function normalizeValue(value, input, fallback) {
@@ -448,4 +572,3 @@ function setApplicationDisabled(disabled) {
         element.disabled = disabled;
     });
 }
-
