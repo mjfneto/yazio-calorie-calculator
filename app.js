@@ -1,279 +1,252 @@
-// State Management
-        let activities = [...initialActivities];
-        let currentActivity = activities[0];
-        let userWeight = 70;
-        let userHeight = 165;
-        let userDuration = 60; // in minutes
+const TIME_POINTS = [15, 30, 45, 60, 90, 120, 180];
+const WEIGHT_POINTS = [50, 60, 70, 80, 90, 100, 110];
+const TABLE_DURATIONS = TIME_POINTS.slice(0, 6);
+const TABLE_WEIGHTS = WEIGHT_POINTS.slice(0, 6);
 
-        // Chart References
-        let timeChartInstance = null;
-        let weightChartInstance = null;
+const CHART_FONT_COLOR = '#94A3B8';
+const CHART_GRID_COLOR = '#334155';
 
-        // DOM Element References
-        const activityListEl = document.getElementById('activityList');
-        const actIconEl = document.getElementById('actIcon');
-        const actTitleEl = document.getElementById('actTitle');
-        const actDescEl = document.getElementById('actDesc');
+let currentActivity = activities[0];
+let userWeight = 70;
+let userDuration = 60;
+let timeChart;
+let weightChart;
 
-        const weightSlider = document.getElementById('weightSlider');
-        const weightNum = document.getElementById('weightNum');
-        const weightVal = document.getElementById('weightVal');
+const activityListEl = document.getElementById('activityList');
+const actIconEl = document.getElementById('actIcon');
+const actTitleEl = document.getElementById('actTitle');
+const actDescEl = document.getElementById('actDesc');
+const calcResultEl = document.getElementById('calcResult');
+const referenceTableBody = document.getElementById('referenceTableBody');
+const copyBtn = document.getElementById('copyBtn');
+const copyToast = document.getElementById('copyToast');
 
-        const heightSlider = document.getElementById('heightSlider');
-        const heightNum = document.getElementById('heightNum');
-        const heightVal = document.getElementById('heightVal');
+const weightSlider = document.getElementById('weightSlider');
+const weightNum = document.getElementById('weightNum');
+const weightVal = document.getElementById('weightVal');
+const timeSlider = document.getElementById('timeSlider');
+const timeNum = document.getElementById('timeNum');
+const timeVal = document.getElementById('timeVal');
+const timeHoursVal = document.getElementById('timeHoursVal');
 
-        const timeSlider = document.getElementById('timeSlider');
-        const timeNum = document.getElementById('timeNum');
-        const timeVal = document.getElementById('timeVal');
-        const timeHoursVal = document.getElementById('timeHoursVal');
+window.addEventListener('DOMContentLoaded', init);
 
-        const calcResultEl = document.getElementById('calcResult');
-        const referenceTableBody = document.getElementById('referenceTableBody');
+function init() {
+    renderActivityList();
+    setupEventListeners();
+    updateActivityPanel();
+    createCharts();
+    updateCalculations();
+}
 
-        window.addEventListener('DOMContentLoaded', () => {
-            renderActivityList();
-            setupEventListeners();
-            selectActivity(activities[0].id);
-        });
+function renderActivityList() {
+    const fragment = document.createDocumentFragment();
 
-        function renderActivityList() {
-            activityListEl.innerHTML = '';
-            activities.forEach(act => {
-                const btn = document.createElement('button');
-                btn.className = `activity-btn ${act.id === currentActivity.id ? 'active' : ''}`;
-                btn.onclick = () => selectActivity(act.id);
-                btn.innerHTML = `
-                    <i class="fa-solid ${act.icon}"></i>
-                    <div class="act-info">
-                        <span class="act-title">${act.title}</span>
-                        <span class="act-met">${act.met} METs</span>
-                    </div>
-                `;
-                activityListEl.appendChild(btn);
-            });
-        }
+    activities.forEach(activity => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'activity-btn';
+        button.dataset.activityId = activity.id;
+        button.innerHTML = `
+            <i class="fa-solid ${activity.icon}"></i>
+            <span class="act-info">
+                <span class="act-title">${activity.title}</span>
+                <span class="act-met">${activity.met} METs</span>
+            </span>
+        `;
+        fragment.appendChild(button);
+    });
 
-        function setupEventListeners() {
-            // Weight Controls Sync
-            weightSlider.addEventListener('input', (e) => syncWeight(e.target.value));
-            weightNum.addEventListener('input', (e) => syncWeight(e.target.value));
+    activityListEl.replaceChildren(fragment);
+    updateActiveActivityButton();
+}
 
-            // Height Controls Sync
-            heightSlider.addEventListener('input', (e) => syncHeight(e.target.value));
-            heightNum.addEventListener('input', (e) => syncHeight(e.target.value));
+function setupEventListeners() {
+    activityListEl.addEventListener('click', event => {
+        const button = event.target.closest('.activity-btn');
+        if (button) selectActivity(button.dataset.activityId);
+    });
 
-            // Time Controls Sync
-            timeSlider.addEventListener('input', (e) => syncTime(e.target.value));
-            timeNum.addEventListener('input', (e) => syncTime(e.target.value));
-        }
+    [weightSlider, weightNum].forEach(input => {
+        input.addEventListener('input', event => syncWeight(event.target.value));
+    });
 
-        function syncWeight(val) {
-            userWeight = Math.max(30, Math.min(200, Number(val) || 70));
-            weightSlider.value = userWeight;
-            weightNum.value = userWeight;
-            weightVal.textContent = userWeight;
-            updateCalculations();
-        }
+    [timeSlider, timeNum].forEach(input => {
+        input.addEventListener('input', event => syncTime(event.target.value));
+    });
 
-        function syncHeight(val) {
-            userHeight = Math.max(100, Math.min(230, Number(val) || 165));
-            heightSlider.value = userHeight;
-            heightNum.value = userHeight;
-            heightVal.textContent = userHeight;
-            updateCalculations();
-        }
+    copyBtn.addEventListener('click', copyToClipboard);
+}
 
-        function syncTime(val) {
-            userDuration = Math.max(1, Math.min(360, Number(val) || 60));
-            timeSlider.value = userDuration;
-            timeNum.value = userDuration;
-            timeVal.textContent = userDuration;
-            timeHoursVal.textContent = (userDuration / 60).toFixed(1);
-            updateCalculations();
-        }
+function normalizeValue(value, input, fallback) {
+    if (String(value).trim() === '') return fallback;
 
-        function selectActivity(id) {
-            currentActivity = activities.find(a => a.id === id) || activities[0];
-            
-            // Update Sidebar Selected State
-            document.querySelectorAll('.activity-btn').forEach((btn, index) => {
-                if (activities[index] && activities[index].id === id) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
 
-            // Update Panel Detail
-            actIconEl.innerHTML = `<i class="fa-solid ${currentActivity.icon}"></i>`;
-            actTitleEl.textContent = currentActivity.title;
-            actDescEl.textContent = `${currentActivity.desc} (${currentActivity.met} METs)`;
+    return Math.min(Number(input.max), Math.max(Number(input.min), parsed));
+}
 
-            updateCalculations();
-        }
+function syncWeight(value) {
+    userWeight = normalizeValue(value, weightNum, 70);
+    weightSlider.value = userWeight;
+    weightNum.value = userWeight;
+    weightVal.textContent = userWeight;
+    updateCalculations();
+}
 
-        function calculateCalories(met, weightKg, durationMinutes) {
-            // Standard Metabolic Equivalent Formula: Calories = MET * Weight (kg) * Duration (hours)
-            const hours = durationMinutes / 60;
-            return Math.round(met * weightKg * hours);
-        }
+function syncTime(value) {
+    userDuration = normalizeValue(value, timeNum, 60);
+    timeSlider.value = userDuration;
+    timeNum.value = userDuration;
+    timeVal.textContent = userDuration;
+    timeHoursVal.textContent = (userDuration / 60).toFixed(1);
+    updateCalculations();
+}
 
-        function updateCalculations() {
-            // Main Calorie Output
-            const calories = calculateCalories(currentActivity.met, userWeight, userDuration);
-            calcResultEl.textContent = calories;
+function selectActivity(id) {
+    const selectedActivity = activities.find(activity => activity.id === id);
+    if (!selectedActivity || selectedActivity === currentActivity) return;
 
-            // Render/Update Charts
-            renderCharts();
+    currentActivity = selectedActivity;
+    updateActiveActivityButton();
+    updateActivityPanel();
+    updateCalculations();
+}
 
-            // Render Table
-            renderTable();
-        }
+function updateActiveActivityButton() {
+    activityListEl.querySelectorAll('.activity-btn').forEach(button => {
+        button.classList.toggle('active', button.dataset.activityId === currentActivity.id);
+    });
+}
 
-        function renderCharts() {
-            const chartFontColor = '#94A3B8';
-            const chartGridColor = '#334155';
+function updateActivityPanel() {
+    actIconEl.innerHTML = `<i class="fa-solid ${currentActivity.icon}"></i>`;
+    actTitleEl.textContent = currentActivity.title;
+    actDescEl.textContent = `${currentActivity.desc} (${currentActivity.met} METs)`;
+}
 
-            // Chart 1: Calories vs Time
-            const timeLabels = ['15 min', '30 min', '45 min', '60 min', '90 min', '120 min', '180 min'];
-            const timeMinutesArr = [15, 30, 45, 60, 90, 120, 180];
-            const timeData = timeMinutesArr.map(m => calculateCalories(currentActivity.met, userWeight, m));
+function calculateCalories(weightKg, durationMinutes) {
+    return Math.round(currentActivity.met * weightKg * (durationMinutes / 60));
+}
 
-            const timeCtx = document.getElementById('timeChart').getContext('2d');
-            if (timeChartInstance) timeChartInstance.destroy();
+function updateCalculations() {
+    calcResultEl.textContent = calculateCalories(userWeight, userDuration);
+    updateCharts();
+    renderTable();
+}
 
-            timeChartInstance = new Chart(timeCtx, {
-                type: 'line',
-                data: {
-                    labels: timeLabels,
-                    datasets: [{
-                        label: `Gasto p/ ${userWeight}kg (kcal)`,
-                        data: timeData,
-                        borderColor: '#6366F1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                        fill: true,
-                        tension: 0.35,
-                        pointRadius: 5,
-                        pointBackgroundColor: '#818CF8'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: chartFontColor } } },
-                    scales: {
-                        x: { ticks: { color: chartFontColor }, grid: { color: chartGridColor } },
-                        y: { ticks: { color: chartFontColor }, grid: { color: chartGridColor } }
-                    }
-                }
-            });
-
-            // Chart 2: Calories vs Weight
-            const weightLabels = ['50 kg', '60 kg', '70 kg', '80 kg', '90 kg', '100 kg', '110 kg'];
-            const weightValuesArr = [50, 60, 70, 80, 90, 100, 110];
-            const weightData = weightValuesArr.map(w => calculateCalories(currentActivity.met, w, userDuration));
-
-            const weightCtx = document.getElementById('weightChart').getContext('2d');
-            if (weightChartInstance) weightChartInstance.destroy();
-
-            weightChartInstance = new Chart(weightCtx, {
-                type: 'bar',
-                data: {
-                    labels: weightLabels,
-                    datasets: [{
-                        label: `Gasto em ${userDuration} min (kcal)`,
-                        data: weightData,
-                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
-                        borderColor: '#10B981',
-                        borderWidth: 1,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: chartFontColor } } },
-                    scales: {
-                        x: { ticks: { color: chartFontColor }, grid: { color: chartGridColor } },
-                        y: { ticks: { color: chartFontColor }, grid: { color: chartGridColor } }
-                    }
-                }
-            });
-        }
-
-        function renderTable() {
-            const weights = [50, 60, 70, 80, 90, 100];
-            const durations = [15, 30, 45, 60, 90, 120];
-
-            referenceTableBody.innerHTML = '';
-
-            weights.forEach(w => {
-                const tr = document.createElement('tr');
-                if (w === userWeight) tr.style.background = 'rgba(99, 102, 241, 0.15)';
-
-                let rowHTML = `<td><strong>${w} kg</strong></td>`;
-                durations.forEach(d => {
-                    const c = calculateCalories(currentActivity.met, w, d);
-                    const isSelectedCell = (w === userWeight && d === userDuration);
-                    rowHTML += `<td style="${isSelectedCell ? 'color:#10B981; font-weight:bold;' : ''}">${c} kcal</td>`;
-                });
-
-                tr.innerHTML = rowHTML;
-                referenceTableBody.appendChild(tr);
-            });
-        }
-
-        // Copy Result to Clipboard Function
-        function copyToClipboard() {
-            const calories = calculateCalories(currentActivity.met, userWeight, userDuration);
-            const textToCopy = `${currentActivity.title} (${userDuration} min): ${calories} kcal`;
-
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(textToCopy);
-            } else {
-                // Fallback using execCommand
-                const textArea = document.createElement("textarea");
-                textArea.value = textToCopy;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
+function chartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: CHART_FONT_COLOR }
             }
-
-            // Show Toast
-            const toast = document.getElementById('copyToast');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
+        },
+        scales: {
+            x: {
+                ticks: { color: CHART_FONT_COLOR },
+                grid: { color: CHART_GRID_COLOR }
+            },
+            y: {
+                ticks: { color: CHART_FONT_COLOR },
+                grid: { color: CHART_GRID_COLOR }
+            }
         }
+    };
+}
 
-        // Modal Controls
-        function openModal(id) {
-            document.getElementById(id).classList.add('active');
-        }
+function createCharts() {
+    timeChart = new Chart(document.getElementById('timeChart'), {
+        type: 'line',
+        data: {
+            labels: TIME_POINTS.map(minutes => `${minutes} min`),
+            datasets: [{
+                label: '',
+                data: [],
+                borderColor: '#6366F1',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: 5,
+                pointBackgroundColor: '#818CF8'
+            }]
+        },
+        options: chartOptions()
+    });
 
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
+    weightChart = new Chart(document.getElementById('weightChart'), {
+        type: 'bar',
+        data: {
+            labels: WEIGHT_POINTS.map(weight => `${weight} kg`),
+            datasets: [{
+                label: '',
+                data: [],
+                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                borderColor: '#10B981',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: chartOptions()
+    });
+}
 
-        // Handle Form Submission for Adding Custom Activity
-        function handleAddActivity(e) {
-            e.preventDefault();
-            const title = document.getElementById('newTitle').value;
-            const met = parseFloat(document.getElementById('newMET').value);
-            const icon = document.getElementById('newIcon').value;
-            const desc = document.getElementById('newDesc').value || 'Atividade personalizada.';
+function updateCharts() {
+    if (!timeChart || !weightChart) return;
 
-            const newAct = {
-                id: 'custom_' + Date.now(),
-                title,
-                met,
-                icon,
-                desc
-            };
+    timeChart.data.datasets[0].label = `Gasto p/ ${userWeight}kg (kcal)`;
+    timeChart.data.datasets[0].data = TIME_POINTS.map(minutes =>
+        calculateCalories(userWeight, minutes)
+    );
+    timeChart.update();
 
-            activities.push(newAct);
-            renderActivityList();
-            selectActivity(newAct.id);
-            document.getElementById('addActivityForm').reset();
-        }
+    weightChart.data.datasets[0].label = `Gasto em ${userDuration} min (kcal)`;
+    weightChart.data.datasets[0].data = WEIGHT_POINTS.map(weight =>
+        calculateCalories(weight, userDuration)
+    );
+    weightChart.update();
+}
+
+function renderTable() {
+    referenceTableBody.innerHTML = TABLE_WEIGHTS.map(weight => {
+        const rowClass = weight === userWeight ? 'selected-row' : '';
+        const cells = TABLE_DURATIONS.map(duration => {
+            const cellClass = weight === userWeight && duration === userDuration
+                ? 'selected-cell'
+                : '';
+            return `<td class="${cellClass}">${calculateCalories(weight, duration)} kcal</td>`;
+        }).join('');
+
+        return `
+            <tr class="${rowClass}">
+                <td><strong>${weight} kg</strong></td>
+                ${cells}
+            </tr>
+        `;
+    }).join('');
+}
+
+async function copyToClipboard() {
+    const calories = calculateCalories(userWeight, userDuration);
+    const text = `${currentActivity.title} (${userDuration} min): ${calories} kcal`;
+
+    try {
+        if (!navigator.clipboard || !window.isSecureContext) throw new Error();
+        await navigator.clipboard.writeText(text);
+    } catch {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+    }
+
+    copyToast.classList.add('show');
+    setTimeout(() => copyToast.classList.remove('show'), 2000);
+}
