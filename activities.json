@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "activities": [
+    {
+      "id": "croche",
+      "title": "Crochê / Tricô",
+      "met": 1.8,
+      "icon": "fa-hands",
+      "desc": "Atividade manual leve realizada na posição sentada."
+    },
+    {
+      "id": "regar_plantas",
+      "title": "Regar 30 Vasos (Balde/Copo)",
+      "met": 2.5,
+      "icon": "fa-seedling",
+      "desc": "Rega manual com caminhada, transporte de água e abaixar/levantar."
+    },
+    {
+      "id": "varrer_passar_pano",
+      "title": "Varrer & Passar Pano",
+      "met": 3.3,
+      "icon": "fa-broom",
+      "desc": "Limpeza doméstica moderada com movimento contínuo dos braços e tronco."
+    },
+    {
+      "id": "varrer_quintal_telhado",
+      "title": "Varrer Quintal & Telhado (200m²)",
+      "met": 3.5,
+      "icon": "fa-house-chimney-window",
+      "desc": "Limpeza de área externa, varredura pesada e espanação de estruturas elevadas."
+    },
+    {
+      "id": "encerar_moveis",
+      "title": "Encerar 10 Móveis de Madeira",
+      "met": 2.5,
+      "icon": "fa-couch",
+      "desc": "Aplicação de cera e polimento com fricção manual em móveis diversos."
+    }
+  ]
+}
