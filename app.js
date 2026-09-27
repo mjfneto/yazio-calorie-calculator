@@ -542,14 +542,12 @@ async function copyToClipboard() {
     if (!currentActivity) return;
 
     const calories = calculateCalories(userWeight, userDuration);
-    const text = `${currentActivity.title} (${userDuration} min): ${calories} kcal`;
 
     try {
         if (!navigator.clipboard || !window.isSecureContext) throw new Error();
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(calories);
     } catch {
         const textArea = document.createElement('textarea');
-        textArea.value = text;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
