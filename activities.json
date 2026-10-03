@@ -37,11 +37,11 @@
       "desc": "Aplicação de cera e polimento com fricção manual em móveis diversos."
     }
     {
-      id: "digitacao-trabalho-no-computador",
-      title: "Digitação / trabalho no computador",
-      met: 1.3,
-      icon:	"fa-hands",
-      desc,	"Intensidade: sedentária / muito leve"
+      "id": "digitacao-trabalho-no-computador",
+      "title": "Digitação / trabalho no computador",
+      "met": 1.3,
+      "icon":	"fa-hands",
+      "desc":	"Intensidade: sedentária / muito leve"
     }
   ]
 }
